@@ -289,11 +289,24 @@ const TinderCard = React.forwardRef(
 					}
 				}
 
-				// use guestureState.vx / guestureState.vy for velocity calculations
-				// translate element
-				let rot = gestureState.vx * 15; // Magic number 15 looks about right
-				if (isNaN(rot)) rot = 0;
-				rot = Math.max(Math.min(rot, settings.maxTilt), -settings.maxTilt);
+				// Gradually increase rotation based on swipe distance
+				const swipeDistance = gestureState.dx; // Horizontal swipe distance
+				const rotationFactor = Math.min(
+					Math.abs(swipeDistance) / (width / 2),
+					1
+				); // Normalize swipe distance (0 to 1)
+
+				// Set rotation direction: clockwise for left swipe, counterclockwise for right swipe
+				let rot = rotationFactor * settings.maxTilt; // Gradual rotation up to max tilt
+				if (swipeDistance < 0) {
+					// Left swipe, rotate clockwise
+					rot = rot; // Positive rotation
+				} else {
+					// Right swipe, rotate counterclockwise
+					rot = -rot; // Negative rotation
+				}
+
+				// Set the card position and rotation
 				setSpringTarget.start({
 					xyrot: [gestureState.dx, gestureState.dy, rot],
 					config: physics.touchResponsive,
@@ -367,7 +380,7 @@ const TinderCard = React.forwardRef(
 			className,
 			style: {
 				transform: xyrot.to(
-					(x, y, rot) => `translate3d(${x}px, ${y}px, ${0}px) rotate(0deg)`
+					(x, y, rot) => `translate3d(${x}px, ${y}px, ${0}px) rotate(${rot}deg)`
 				),
 			},
 			children,
